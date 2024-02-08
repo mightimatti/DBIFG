@@ -8,7 +8,7 @@ from utils.memory_mapped_diffusion_dataset import MemoryMappedDiffusionDataset
 
 def train():
     IMAGE_SIZE = 128
-    BATCH_SIZE = 12
+    BATCH_SIZE = 36
 
     model = Unet(
         dim = 64,
@@ -34,7 +34,7 @@ def train():
         train_batch_size = BATCH_SIZE,
         train_lr = 8e-5,
         train_num_steps = 700000,         # total training steps
-        gradient_accumulate_every = 2,    # gradient accumulation steps
+        gradient_accumulate_every = 1,    # gradient accumulation steps
         ema_decay = 0.995,                # exponential moving average decay
         amp = True,                       # turn on mixed precision
         calculate_fid = True              # whether to calculate fid during training
