@@ -8,42 +8,47 @@ from utils.memory_mapped_diffusion_dataset import MemoryMappedDiffusionDataset
 
 def train():
     IMAGE_SIZE = 128
-    BATCH_SIZE = 38
+    BATCH_SIZE = 16
 
     model = Unet(
         dim = 64,
-        dim_mults = (1, 2, 4, 8, 16),
+        channels=2,
+        dim_mults = (1, 2, 4, 8),
         flash_attn = True
     )
 
     diffusion = GaussianDiffusion(
         model,
         image_size = IMAGE_SIZE,
-        timesteps = 512,           # number of steps
-        sampling_timesteps = 128    # number of sampling timesteps (using ddim for faster inference [see citation for ddim paper])
+        timesteps = 256,           # number of steps
+        sampling_timesteps = 64    # number of sampling timesteps
     )
 
     # DATASET = "/media/bean/1c6e3fbe-7865-44ae-bf37-9bbb323c174c/scan_calisto_preprocessor/datasets/250_256_CRI_SLIDES_250_173003"
-    DATASET = "/root/998_128_SLIDES_741206"
+    DATASET = "/media/bean/1c6e3fbe-7865-44ae-bf37-9bbb323c174c/tubcloud/998_128_SLIDES_741206"
     model_dataset = MemoryMappedDiffusionDataset(DATASET, IMAGE_SIZE=IMAGE_SIZE)
-    dataset_loader = DataLoader(model_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory = True, num_workers = 32)
+    dataset_loader = DataLoader(model_dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory = True, num_workers = 4)
 
     trainer = Trainer(
         diffusion,
-        '/root/images',
+        '/media/bean/1c6e3fbe-7865-44ae-bf37-9bbb323c174c/tubcloud/images',
         train_batch_size = BATCH_SIZE,
         train_lr = 8e-5,
-        train_num_steps = 150000,         # total training steps
-        gradient_accumulate_every = 1,    # gradient accumulation steps
+        train_num_steps = 160000,         # total training steps
+        gradient_accumulate_every = 2,    # gradient accumulation steps
         ema_decay = 0.995,                # exponential moving average decay
-        amp = True,                       # turn on mixed precision
+        amp = False,                       # turn on mixed precision
+        calculate_fid=False,
+        save_and_sample_every = 1000,
     )
 
     trainer.dl = model_dataset
     trainer.accelerator.prepare(dataset_loader)
     trainer.dl = cycle(dataset_loader)
+    trainer.load(125)
     
     trainer.train()
+
 
 if __name__ == "__main__":
     train()

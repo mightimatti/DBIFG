@@ -2,7 +2,7 @@ import torch
 import os
 import numpy as np
 import json
-
+from kornia.color import rgb_to_hsv
 # FEATURE_PATCHES_PATTERN = "feature_patches.npy"
 # MAP_PATCHES_PATTERN = "map_patches.npy"
 INPUT_DTYPE = np.float16
@@ -49,8 +49,12 @@ class MemoryMappedDiffusionDataset(torch.utils.data.Dataset):
             dtype=INPUT_DTYPE,
             mode="r",
         ).reshape((-1, 3, self.image_size, self.image_size))
-    
-        return torch.from_numpy(np.array(mmap[sub_idx]))
+        
+        tensor = torch.from_numpy(np.array(mmap[sub_idx])) 
+        tensor_clamped = torch.clip(tensor, 0, 1.0)
+        sv = rgb_to_hsv(tensor_clamped, eps=torch.finfo(torch.float16).eps)[1:]
+        # print(sv.shape)
+        return sv
 
     def __len__(self):
         """return the total number of images in this dataset"""
